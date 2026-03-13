@@ -1,0 +1,1 @@
+{"default":{"identifier":"default","description":"Default capabilities for BongoDog","local":true,"windows":["main"],"permissions":["core:default","core:window:allow-start-dragging","core:window:allow-close","core:window:allow-outer-position","core:window:allow-set-position","core:window:allow-current-monitor","core:event:allow-listen","core:event:allow-emit"]}}

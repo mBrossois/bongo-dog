@@ -1,0 +1,25 @@
+[package]
+name = "bongodog"
+version = "0.1.0"
+description = "BongoDog desktop widget"
+authors = ["you"]
+edition = "2021"
+
+[lib]
+name = "bongodog_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["macos-private-api"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[target.'cfg(target_os = "macos")'.dependencies]
+core-foundation = "0.9"
+core-graphics = { version = "0.23", features = ["highsierra"] }
+
+[features]
+custom-protocol = ["tauri/custom-protocol"]

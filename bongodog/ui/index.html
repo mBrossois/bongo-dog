@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>BongoDog</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; -webkit-user-select: none; }
+    html, body { width: 110px; height: 105px; background: transparent; overflow: hidden; }
+    #app { width: 110px; height: 105px; position: relative; }
+    #dog-container { width: 110px; height: 100px; position: absolute; top: 0; left: 0; z-index: 10; cursor: grab; }
+    #dog-container:active { cursor: grabbing; }
+    .dog-frame { position: absolute; top: 0; left: 0; width: 110px; height: 77px; display: none; pointer-events: none; }
+    .dog-frame.active { display: block; }
+    .dog-frame img { width: 110px; height: 100px; }
+    #counter-bar { width: 110px; height: 28px; background: rgba(40,40,40,0.88); border-radius: 0 0 8px 8px; display: flex; align-items: center; justify-content: center; position: absolute; bottom: 0; left: 0; z-index: 5; }
+    #counter-text { font-family: Georgia, serif; font-size: 11px; font-weight: bold; color: #f9c46b; letter-spacing: 0.5px; }
+    #close-btn { position: absolute; z-index: 20; bottom: 7px; right: 7px; width: 14px; height: 14px; border-radius: 50%; background: rgba(160,160,180,0.7); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.15s; padding: 0; }
+    #close-btn:hover { background: rgba(220,80,80,1); }
+    #close-btn svg { width: 8px; height: 8px; pointer-events: none; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div id="dog-container">
+      <div class="dog-frame active" id="frame-idle_normal"><img src="../assets/Dog-no-tongue.svg" draggable="false" /></div>
+      <div class="dog-frame" id="frame-idle_tongue"><img src="../assets/Dog-with-tongue.svg" draggable="false" /></div>
+      <div class="dog-frame" id="frame-eyes_closed"><img src="../assets/Dog-eyes-closed-no-tongue.svg" draggable="false" /></div>
+      <div class="dog-frame" id="frame-eyes_closed_tongue"><img src="../assets/Dog-eyes-closed-tongue.svg" draggable="false" /></div>
+      <div class="dog-frame" id="frame-paw_left"><img src="../assets/Dog-paw-left-down.svg" draggable="false" /></div>
+      <div class="dog-frame" id="frame-paw_right"><img src="../assets/Dog-paw-right-down.svg" draggable="false" /></div>
+    </div>
+    <div id="counter-bar">
+      <span id="counter-text">0</span>
+    </div>
+    <!-- Close button is a direct child of #app, not inside counter-bar -->
+    <button id="close-btn" title="Close">
+      <svg viewBox="0 0 8 8" fill="none"><line x1="1" y1="1" x2="7" y2="7" stroke="white" stroke-width="1.5" stroke-linecap="round"/><line x1="7" y1="1" x2="1" y2="7" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+
+  <script>
+    var IDLE_SEQUENCE = [
+      { frame: 'idle_normal',        ticks: 90 },
+      { frame: 'idle_tongue',        ticks: 40 },
+      { frame: 'idle_normal',        ticks: 60 },
+      { frame: 'eyes_closed',        ticks: 50 },
+      { frame: 'eyes_closed_tongue', ticks: 30 },
+      { frame: 'eyes_closed',        ticks: 30 },
+      { frame: 'idle_normal',        ticks: 70 },
+    ];
+    var idleSeqIdx = 0, idleSeqTicks = 0, activeFrame = 'idle_normal';
+    var leftPaw = false, rightPaw = false;
+
+    var counterText = document.getElementById('counter-text');
+    var closeBtn    = document.getElementById('close-btn');
+
+    function showFrame(key) {
+      if (key === activeFrame) return;
+      document.getElementById('frame-' + activeFrame).classList.remove('active');
+      var next = document.getElementById('frame-' + key);
+      if (next) { next.classList.add('active'); activeFrame = key; }
+    }
+
+    var lastTime = 0;
+    requestAnimationFrame(function tick(now) {
+      requestAnimationFrame(tick);
+      if (now - lastTime < 16.67) return;
+      lastTime = now;
+      if (leftPaw)       showFrame('paw_left');
+      else if (rightPaw) showFrame('paw_right');
+      else {
+        if (++idleSeqTicks >= IDLE_SEQUENCE[idleSeqIdx].ticks) {
+          idleSeqTicks = 0;
+          idleSeqIdx = (idleSeqIdx + 1) % IDLE_SEQUENCE.length;
+        }
+        showFrame(IDLE_SEQUENCE[idleSeqIdx].frame);
+      }
+    });
+
+    function initTauri() {
+      if (!window.__TAURI__ || !window.__TAURI__.window || !window.__TAURI__.core) {
+        setTimeout(initTauri, 30); return;
+      }
+
+      var invoke = window.__TAURI__.core.invoke;
+      var listen = window.__TAURI__.event.listen;
+      var appWin = window.__TAURI__.window.getCurrentWindow();
+
+      // Paw state from Rust
+      listen('paw-state', function(e) {
+        leftPaw  = e.payload.left_paw;
+        rightPaw = e.payload.right_paw;
+        counterText.textContent = e.payload.total.toLocaleString();
+      });
+
+      // Drag — native OS drag
+      document.addEventListener('mousedown', function(e) {
+        if (e.button !== 0) return;
+        if (e.target === closeBtn) return;
+        appWin.startDragging();
+      });
+
+      // Close button
+      closeBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        invoke('quit');
+      });
+
+      // Escape key
+      window.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') invoke('quit');
+      }, true);
+    }
+    initTauri();
+  </script>
+</body>
+</html>
