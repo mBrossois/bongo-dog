@@ -1,8 +1,8 @@
 .cursor/rules/*
 
-bongodog/build/*
-bongodog/dist/*
-bongodog/src-tauri/Cargo.lock
-bongodog/src-tauri/Cargo.lock
-bongodog/node_modules/*
-bongodog/src-tauri/target/*
+build/*
+dist/*
+src-tauri/Cargo.lock
+src-tauri/Cargo.lock
+node_modules/*
+src-tauri/target/*

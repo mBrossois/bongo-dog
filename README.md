@@ -1,101 +1,151 @@
-# BongoDog 🐾
+# 🐾 BongoDog — Tauri Desktop Widget
 
-A desktop idle widget inspired by Bongo Cat — but make it a dog. BongoDog sits transparently on top of all your windows, animating through a sequence of adorable poses while you work. When you type or click, the dog reacts by banging its paws on a drum, and a counter tracks your total keypresses and clicks.
+A transparent, always-on-top desktop idle widget that animates a dog and reacts to keyboard/mouse events. Built with Tauri 2 (Rust + HTML/JS), ported from the original PyQt5 version.
+
+## Window
+- **110 × 145 px** — frameless, transparent background
+- Always on top, draggable by the dog image
+- Close button (bottom-right ×)
+- Gold counter bar shows total key + click count
+
+## Animation
+- Idle loop cycles through SVG frames automatically (~60 fps)
+- On keydown or mousedown: switches to left/right paw frames (alternating)
+- On keyup / mouseup: returns to idle loop
 
 ---
 
-## Features
+## Project Structure
 
-- **Always-on-top** transparent overlay — lives above every window
-- **Idle animation** cycles through resting, panting, blinking, and dozing poses
-- **Reactive paws** — left/right paw animations trigger on keystrokes and mouse clicks
-- **Input counter** displays your total key + click count
-- **Draggable** — click and drag to reposition anywhere on screen
-- **macOS global event monitoring** — reacts to input even when another app is focused (requires PyObjC)
+```
+bongodog/
+├── index.html               ← Frontend (HTML/CSS/JS — all animation logic)
+├── vite.config.js
+├── package.json
+├── assets/                  ← ⚠️  PUT YOUR SVG FILES HERE
+│   ├── Dog-no-tongue.svg
+│   ├── Dog-with-tongue.svg
+│   ├── Dog-eyes-closed-no-tongue.svg
+│   ├── Dog-eyes-closed-tongue.svg
+│   ├── Dog-paw-left-down.svg
+│   └── Dog-paw-right-down.svg
+└── src-tauri/
+    ├── tauri.conf.json
+    ├── Cargo.toml
+    └── src/
+        ├── main.rs
+        └── lib.rs
+```
 
 ---
 
-## Requirements
+## Prerequisites
+
+Install these once:
+
+### 1. Rust
+```bash
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+```
+
+### 2. Node.js (v18+)
+Download from https://nodejs.org or use nvm:
+```bash
+nvm install 18
+```
+
+### 3. Tauri system dependencies
+
+**macOS:**
+```bash
+xcode-select --install
+```
+
+**Ubuntu / Debian:**
+```bash
+sudo apt update
+sudo apt install libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+```
+
+**Windows:**
+Install [Microsoft C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/) and [WebView2](https://developer.microsoft.com/en-us/microsoft-edge/webview2/).
+
+---
+
+## Setup & Run
 
 ```bash
-pip install PyQt5
+# 1. Install JS dependencies
+npm install
+
+# 2. Add your SVG assets to the assets/ folder (see filenames above)
+
+# 3. Run in dev mode (hot reload)
+npm run tauri dev
+
+# 4. Build a release binary
+npm run tauri build
 ```
 
-For macOS global input monitoring (optional but recommended):
-
-```bash
-pip install pyobjc pyobjc-framework-AppKit
-```
+The built app will be in `src-tauri/target/release/`.
 
 ---
 
-## How to Use
+## SVG Assets
 
-### Running the app
+Place your 6 SVG files in the `assets/` folder with **exactly these filenames**:
 
-```bash
-python bongodog.py
-```
+| File | Used when |
+|------|-----------|
+| `Dog-no-tongue.svg` | Default idle |
+| `Dog-with-tongue.svg` | Idle with tongue |
+| `Dog-eyes-closed-no-tongue.svg` | Eyes closed |
+| `Dog-eyes-closed-tongue.svg` | Eyes closed + tongue |
+| `Dog-paw-left-down.svg` | Left paw hit (even key/click) |
+| `Dog-paw-right-down.svg` | Right paw hit (odd key/click) |
 
-The dog will appear in the top-left corner of your screen. You can drag it anywhere.
-
-### Controls
-
-| Action | Effect |
-|---|---|
-| **Type anything** | Dog reacts — paws alternate left/right |
-| **Click anywhere** | Same paw reaction as typing |
-| **Click and drag** | Move the widget around your screen |
-| **Click ✕ button** | Close the app (bottom-right corner of widget) |
-| **Escape key** | Also closes the app |
-
-### Asset layout
-
-The app expects an `assets/` folder next to `bongodog.py` containing these PNGs:
-
-```
-assets/
-├── Dog-no-tongue.png
-├── Dog-with-tongue.png
-├── Dog-eyes-closed-no-tongue.png
-├── Dog-eyes-closed-tongue.png
-├── Dog-paw-left-down.png
-└── Dog-paw-right-down.png
-```
-
-Export them at 2× your intended display size (e.g. 600×640) for crisp rendering on retina displays. Make sure to export with a transparent background.
-
-### Idle animation sequence
-
-When you're not typing or clicking, the dog cycles through:
-
-1. **Resting** (`Dog-no-tongue.png`) — ~1.5 s
-2. **Panting** (`Dog-with-tongue.png`) — ~0.7 s
-3. **Resting** — ~1 s
-4. **Eyes closed** (`Dog-eyes-closed-no-tongue.png`) — ~0.8 s
-5. **Eyes closed + tongue** (`Dog-eyes-closed-tongue.png`) — ~0.5 s
-6. **Eyes closed** — ~0.5 s
-7. **Resting** — ~1.2 s
-8. *(loops)*
-
-### macOS notes
-
-On macOS, the app uses PyObjC to:
-- Float above all windows, including full-screen apps
-- Monitor keyboard and mouse input **globally** (so the dog reacts even when another app is focused)
-- Run as an accessory app (no Dock icon, no Cmd+Tab entry)
-
-You may be prompted to grant **Accessibility permissions** in System Settings → Privacy & Security → Accessibility. This is required for global input monitoring.
+The SVGs are rendered at **110 × 117 px** — they can have any internal `viewBox`.
 
 ---
 
-## Troubleshooting
+## Idle Animation Sequence
 
-**Dog doesn't react when another app is focused (macOS)**
-Grant Accessibility permissions to Terminal (or whichever app you used to launch the script) in System Settings → Privacy & Security → Accessibility.
+The idle loop (when no keys/mouse are pressed) cycles through frames at ~60 fps:
 
-**Images not showing**
-Make sure the `assets/` folder is in the same directory as `bongodog.py` and all six PNG files are present. Check the terminal output on launch for any per-file warnings.
+| Frame | Duration |
+|-------|----------|
+| idle_normal | ~1.5 s |
+| idle_tongue | ~0.7 s |
+| idle_normal | ~1.0 s |
+| eyes_closed | ~0.8 s |
+| eyes_closed_tongue | ~0.5 s |
+| eyes_closed | ~0.5 s |
+| idle_normal | ~1.2 s |
 
-**Window disappears behind other windows**
-On non-macOS platforms, `WindowStaysOnTopHint` should keep it on top. If not, try relaunching — some compositors handle this inconsistently.
+---
+
+## Customisation
+
+All animation timing is in `index.html` in the `IDLE_SEQUENCE` array:
+```js
+const IDLE_SEQUENCE = [
+  { frame: 'idle_normal',        ticks: 90 },  // ticks at 60fps
+  { frame: 'idle_tongue',        ticks: 40 },
+  ...
+];
+```
+
+Window size is set in `src-tauri/tauri.conf.json` under `app.windows[0]`.
+
+---
+
+## Notes on Global Input (outside the window)
+
+The Python version used `NSEvent` (macOS-only) to capture global keyboard/mouse events even when the app was not focused. In Tauri the widget only counts input **while the window has focus** on all three platforms.
+
+To add true global input capture:
+- **macOS**: Use the `tauri-plugin-global-shortcut` plugin for keys, and a custom Rust `CGEvent` tap for mouse
+- **Windows**: Add a Rust `SetWindowsHookEx` call in `lib.rs`
+- **Linux**: Use `evdev` or `X11 XRecord`
+
+These are advanced additions. For an idle widget that sits on screen, the in-window counting is usually sufficient.
