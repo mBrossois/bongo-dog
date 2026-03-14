@@ -78,7 +78,7 @@ Install [Microsoft C++ Build Tools](https://visualstudio.microsoft.com/visual-cp
 # 1. Install JS dependencies
 npm install
 
-# 2. Add your SVG assets to the assets/ folder (see filenames above)
+# 2. Add your SVG assets to the /ui/assets/ folder (see filenames above)
 
 # 3. Run in dev mode (hot reload)
 npm run tauri dev
