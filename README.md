@@ -1,6 +1,6 @@
 # 🐾 BongoDog — Tauri Desktop Widget
 
-A transparent, always-on-top desktop idle widget that animates a dog and reacts to keyboard/mouse events. Built with Tauri 2 (Rust + HTML/JS), ported from the original PyQt5 version.
+A transparent, always-on-top desktop idle widget that animates a dog and reacts to keyboard/mouse events. Built with Tauri 2 (Rust + HTML/JS).
 
 ## Window
 - **110 × 145 px** — frameless, transparent background
@@ -138,14 +138,3 @@ const IDLE_SEQUENCE = [
 Window size is set in `src-tauri/tauri.conf.json` under `app.windows[0]`.
 
 ---
-
-## Notes on Global Input (outside the window)
-
-The Python version used `NSEvent` (macOS-only) to capture global keyboard/mouse events even when the app was not focused. In Tauri the widget only counts input **while the window has focus** on all three platforms.
-
-To add true global input capture:
-- **macOS**: Use the `tauri-plugin-global-shortcut` plugin for keys, and a custom Rust `CGEvent` tap for mouse
-- **Windows**: Add a Rust `SetWindowsHookEx` call in `lib.rs`
-- **Linux**: Use `evdev` or `X11 XRecord`
-
-These are advanced additions. For an idle widget that sits on screen, the in-window counting is usually sufficient.
